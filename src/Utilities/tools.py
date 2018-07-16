@@ -10,20 +10,12 @@ import pandas as pd
 
 def parse_options():
     parser = ArgumentParser()
-    parser.add_argument("-a", "--all", required=False, default=False,
-                        action="store_true",
-                        help="Run all the ML algorithms.")
-
-    parser.add_argument("-s", "--svm", required=False, default=False,
-                        action="store_true",
-                        help="Run SVM ML algorithm.")
-
-    parser.add_argument("-nb", "--naive_bayes", required=False, default=False,
-                        action="store_true",
-                        help="Run naive-bayes ML algorithm.")
+    #parser.add_argument("-a", "--all", required=False, default=False,
+    #                   action="store_true",
+    #                   help="Run all the ML algorithms.")
 
     parser.add_argument("-n", "--number_iterations", required=False,
-                        default=100, type=int,
+                        default=1, type=int,
                         help="Number of iterations to run the cross validation")
 
     parser.add_argument("-k", "--kFold", required=False,
@@ -35,13 +27,14 @@ def parse_options():
                         help="Path to data folder")
 
     parser.add_argument("-m", "--model", required=False,
-                        default="svm", type=str,
+                        default="all", type=str,
                         help="Model name to run. pass 'all' to run all the models")
 
+    parser.add_argument("-o", "--output", required=False,
+                        default="outputs/", type=str,
+                        help="Output Folder where results are to stored")
+
     options = parser.parse_args()
-    #if not (options.all or options.svm or options.naive_bayes):
-     #   print("You need to set all or svm or naive_bayes flag" )
-      #  sys.exit(1)
     return options
 
 def data_extraction(data_folder):
@@ -72,14 +65,14 @@ def data_extraction(data_folder):
 
     return df
 
-def dump_results_to_json(model_name, results):
+def dump_results_to_json(model_name, results, output_folder):
     """
     :param model_name: Machine learning model name
     :param results: Scores of kFold stratified cross Validation
     :return:
     """
 
-    res_file = open("results_%s.json" % model_name, "w", encoding='utf-8' )
+    res_file = open(output_folder+"results_%s.json" % model_name, "w", encoding='utf-8' )
     #jsonList = [o.__dict__ for o in results]
 
 
