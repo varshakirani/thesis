@@ -15,7 +15,7 @@ def parse_options():
     #                   help="Run all the ML algorithms.")
 
     parser.add_argument("-n", "--number_iterations", required=False,
-                        default=1, type=int,
+                        default=100, type=int,
                         help="Number of iterations to run the cross validation")
 
     parser.add_argument("-k", "--kFold", required=False,
