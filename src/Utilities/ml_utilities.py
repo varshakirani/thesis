@@ -35,7 +35,9 @@ def model_fitting(model_name, X, y, kFold = 10):
     cv = StratifiedKFold(kFold)
     model.fit(X, y)
     scores = cross_val_score(model, X, y, cv=cv)
-    print("Model: %s, Accuracy: %0.2f (+/- %0.2f)" % (model_name, scores.mean(), scores.std() * 2))
+    #print("Model: %s, Accuracy: %0.2f (+/- %0.2f)" % (model_name, scores.mean(), scores.std() * 2))
+
+    return scores
 
 
 def get_features_labels(train):

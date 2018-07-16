@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+import json
 import scipy.io as sio
 
 import sys
@@ -70,5 +71,22 @@ def data_extraction(data_folder):
     df.drop(['means'], axis=1, inplace=True)
 
     return df
+
+def dump_results_to_json(model_name, results):
+    """
+    :param model_name: Machine learning model name
+    :param results: Scores of kFold stratified cross Validation
+    :return:
+    """
+
+    res_file = open("results_%s.json" % model_name, "w", encoding='utf-8' )
+    #jsonList = [o.__dict__ for o in results]
+
+
+    jsonList = [o.tolist() for o in results]
+    json.dumps(jsonList)
+
+    json.dump(jsonList, res_file, sort_keys=True, indent=4)
+
 
 
