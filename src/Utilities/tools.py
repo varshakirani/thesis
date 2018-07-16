@@ -6,6 +6,7 @@ import sys
 import os
 import pandas as pd
 
+
 def parse_options():
     parser = ArgumentParser()
     parser.add_argument("-a", "--all", required=False, default=False,
@@ -31,10 +32,15 @@ def parse_options():
     parser.add_argument("-d", "--data", required=False,
                         default="../../Data", type=str,
                         help="Path to data folder")
+
+    parser.add_argument("-m", "--model", required=False,
+                        default="svm", type=str,
+                        help="Model name to run. pass 'all' to run all the models")
+
     options = parser.parse_args()
-    if not (options.all or options.svm or options.naive_bayes):
-        print("You need to set all or svm or naive_bayes flag" )
-        sys.exit(1)
+    #if not (options.all or options.svm or options.naive_bayes):
+     #   print("You need to set all or svm or naive_bayes flag" )
+      #  sys.exit(1)
     return options
 
 def data_extraction(data_folder):
@@ -42,9 +48,8 @@ def data_extraction(data_folder):
     :param data_folder: Path to the folder that contains Data
     :return: panda dataframe containing means of various Region of interest (ROI) of Brain
     """
-    print("inside data_extraction function")
+
     data = sio.loadmat(data_folder+"/Faces_con_0001.mat")
-    print(data_folder)
 
     columns = ["means", "label"]
     # df = pd.DataFrame({'A':1,'B':2}, index = None)
@@ -55,7 +60,7 @@ def data_extraction(data_folder):
             for i in range(len(data["means"])):
                 d = data["means"][i], data["label"][0][i]
                 data_list.append(d)
-            print(len(data["means"]))
+
     df = pd.DataFrame(data_list, columns=columns)
     RoiNames = (data["RoiName"][:, 0])
     colRoi = []
@@ -65,3 +70,5 @@ def data_extraction(data_folder):
     df.drop(['means'], axis=1, inplace=True)
 
     return df
+
+
