@@ -54,7 +54,7 @@ def main():
             tools.dump_results_to_json(key, value, options.output)
 
     elif options.nClass == 2:
-        # TODO: Read the data and separate into 3 different dataframes.
+        # Done: Read the data and separate into 3 different dataframes.
         # TODO: For each pair combination combine it, shuffle it
         # TODO: Randomnly split it into training and testing set
         # TODO: Fit the models and write the scores into JSON files
@@ -63,6 +63,10 @@ def main():
         print("biClass Classification for every pair among Bipolar(1), Schizophrenia(2) and Control(3)")
 
         df1, df2, df3 = tools.data_extraction(options.data, options.nClass)
+        # Combining two pairs off all combination
+        df12 = shuffle(df1.append(df2))
+        df23 = shuffle(df2.append(df3))
+        df31 = shuffle(df3.append(df1))
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))
