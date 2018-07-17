@@ -60,9 +60,9 @@ def main():
     elif options.nClass == 2:
         # Done: Read the data and separate into 3 different dataframes.
         # Done: For each pair combination combine it, shuffle it
-        # TODO: Randomnly split it into training and testing set
-        # TODO: Fit the models and write the scores into JSON files
-        # TODO: Visualization should be fixed for that new JSON files
+        # Done: Randomnly split it into training and testing set
+        # Done: Fit the models and write the scores into JSON files
+        # Done: Visualization should be fixed for that new JSON files
 
         print("biClass Classification for every pair among Bipolar(1), Schizophrenia(2) and Control(3)")
 

@@ -20,21 +20,28 @@ def parse_options():
 def main():
     print("Visualization of cross validation score")
     options = parse_options()
-    results = {}
-    for json_file in os.listdir(options.output):
-        model_name = json_file.split(".")[0][8:]
-        results[model_name] = json.load(open(options.output+"/"+json_file))
+    classes = ["12", "23", "31", "123"]
+    fig, axes = plt.subplots(nrows=2, ncols=2)
+    axs = axes.ravel()
+    i = 0
+    for c in classes:
 
-    for model, scores in results.items():
-        scores = array(scores)
-        mean_scores = scores.mean(axis=1)
-        plt.hist(mean_scores, 100,  label="%s. Mean:%s"%(model,mean_scores.mean(axis=0)))
-    ylim = plt.ylim()
-        #plt.plot(2 * [mean_scores.mean(axis=0)], ylim, "--g", linewidth=3, label="Mean Score of 100 iterations. Value=%s"%(mean_scores.mean(axis=0)))
-    plt.xlabel("Mean Scores")
-    plt.legend(loc = "upper right")
+        results = {}
 
-    plt.ylim(ylim)
+        for json_file in os.listdir(options.output):
+            if json_file.split(".")[0].split("_")[-1] == c:
+
+                model_name = json_file.split(".")[0][8:]
+                results[model_name] = json.load(open(options.output+"/"+json_file))
+
+        for model, scores in results.items():
+            scores = array(scores)
+            mean_scores = scores.mean(axis=1)
+            axs[i].hist(mean_scores, 100, label="%s. Mean:%s" % (model, mean_scores.mean(axis=0)))
+            axs[i].legend(loc = "upper right")
+            axs[i].set_title(c)
+
+        i = i+1
 
     plt.show()
 
