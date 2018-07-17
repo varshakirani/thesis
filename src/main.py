@@ -31,26 +31,38 @@ def main():
     options = tools.parse_options()
     start = time.time()
 
-    # Read Data and put it into panda data frame. Initially considering only means
-    df = tools.data_extraction(options.data)
-    df = mlu.missing_values(df)
-    train, test = mlu.train_test_split(df)
-    models = ["svm", "naive_bayes", "decision_tree"]
+    if options.nClass == 3:
+        # Read Data and put it into panda data frame. Initially considering only means
+        df = tools.data_extraction(options.data, options.nClass)
+        df = mlu.missing_values(df)
+        train, test = mlu.train_test_split(df)
+        models = ["svm", "naive_bayes", "decision_tree"]
 
-    result_scores = Result([],[],[])
-    for i in range(options.number_iterations):
-        print("Running iteration :%s  " %(i+1))
-        X, y = mlu.get_features_labels(shuffle(train))
-        if options.model == "all":
-            for model in models:
-                scores = mlu.model_fitting(model, X, y, options.kFold)
-                result_scores.out[model].append(scores)
-        else:
-            scores = mlu.model_fitting(options.model, X, y, options.kFold)
-            result_scores.out["svm"].append(scores)
+        result_scores = Result([],[],[])
+        for i in range(options.number_iterations):
+            print("Running iteration :%s  " %(i+1))
+            X, y = mlu.get_features_labels(shuffle(train))
+            if options.model == "all":
+                for model in models:
+                    scores = mlu.model_fitting(model, X, y, options.kFold)
+                    result_scores.out[model].append(scores)
+            else:
+                scores = mlu.model_fitting(options.model, X, y, options.kFold)
+                result_scores.out["svm"].append(scores)
 
-    for key, value in result_scores.out.items():
-        tools.dump_results_to_json(key, value, options.output)
+        for key, value in result_scores.out.items():
+            tools.dump_results_to_json(key, value, options.output)
+
+    elif options.nClass == 2:
+        # TODO: Read the data and separate into 3 different dataframes.
+        # TODO: For each pair combination combine it, shuffle it
+        # TODO: Randomnly split it into training and testing set
+        # TODO: Fit the models and write the scores into JSON files
+        # TODO: Visualization should be fixed for that new JSON files
+
+        print("biClass Classification for every pair among Bipolar(1), Schizophrenia(2) and Control(3)")
+
+        df1, df2, df3 = tools.data_extraction(options.data, options.nClass)
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))

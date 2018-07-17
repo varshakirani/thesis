@@ -22,6 +22,10 @@ def parse_options():
                         default=10, type=int,
                         help="k fold number in Stratified Cross Validation")
 
+    parser.add_argument( "--nClass", required=False,
+                        default=3, type=int,
+                        help="3 class or 2 class classifier.")
+
     parser.add_argument("-d", "--data", required=False,
                         default="../../Data", type=str,
                         help="Path to data folder")
@@ -37,10 +41,11 @@ def parse_options():
     options = parser.parse_args()
     return options
 
-def data_extraction(data_folder):
+def data_extraction(data_folder, nClass):
     """
     :param data_folder: Path to the folder that contains Data
-    :return: panda dataframe containing means of various Region of interest (ROI) of Brain
+    :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
+            df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
 
     data = sio.loadmat(data_folder+"/Faces_con_0001.mat")
@@ -63,7 +68,14 @@ def data_extraction(data_folder):
     df[colRoi] = pd.DataFrame(df.means.values.tolist(), index=df.index)
     df.drop(['means'], axis=1, inplace=True)
 
-    return df
+    if nClass == 3: #No need for separated data
+        return df
+
+    elif nClass == 2:
+        df1 = df[df.label == 1]
+        df2 = df[df.label == 2]
+        df3 = df[df.label == 3]
+        return df1, df2, df3
 
 def dump_results_to_json(model_name, results, output_folder):
     """
