@@ -77,14 +77,14 @@ def data_extraction(data_folder, nClass):
         df3 = df[df.label == 3]
         return df1, df2, df3
 
-def dump_results_to_json(model_name, results, output_folder):
+def dump_results_to_json(model_name, results, output_folder, n):
     """
     :param model_name: Machine learning model name
     :param results: Scores of kFold stratified cross Validation
     :return:
     """
 
-    res_file = open(output_folder+"results_%s.json" % model_name, "w", encoding='utf-8' )
+    res_file = open(output_folder+"results_%s_%s.json" % (model_name,n), "w", encoding='utf-8' )
     #jsonList = [o.__dict__ for o in results]
 
 

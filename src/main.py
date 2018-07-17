@@ -26,6 +26,26 @@ class Result:
         #self.svm.append(svm)
 
 
+def run_basic_ml(df, number_iterations, model_option, kFold,n, dump=False, output="."):
+    train, test = mlu.train_test_split(df)
+    models = ["svm", "naive_bayes", "decision_tree"]
+
+    result_scores = Result([], [], [])
+    for i in range(number_iterations):
+        # print("Running iteration :%s  " % (i + 1))
+        X, y = mlu.get_features_labels(shuffle(train))
+        if model_option == "all":
+            for model in models:
+                scores = mlu.model_fitting(model, X, y, kFold)
+                result_scores.out[model].append(scores)
+        else:
+            scores = mlu.model_fitting(model_option, X, y, kFold)
+            result_scores.out["svm"].append(scores)
+    if dump:
+        for key, value in result_scores.out.items():
+            tools.dump_results_to_json(key, value, output, n)
+
+
 def main():
     print("NI Thesis")
     options = tools.parse_options()
@@ -35,27 +55,11 @@ def main():
         # Read Data and put it into panda data frame. Initially considering only means
         df = tools.data_extraction(options.data, options.nClass)
         df = mlu.missing_values(df)
-        train, test = mlu.train_test_split(df)
-        models = ["svm", "naive_bayes", "decision_tree"]
-
-        result_scores = Result([],[],[])
-        for i in range(options.number_iterations):
-            print("Running iteration :%s  " %(i+1))
-            X, y = mlu.get_features_labels(shuffle(train))
-            if options.model == "all":
-                for model in models:
-                    scores = mlu.model_fitting(model, X, y, options.kFold)
-                    result_scores.out[model].append(scores)
-            else:
-                scores = mlu.model_fitting(options.model, X, y, options.kFold)
-                result_scores.out["svm"].append(scores)
-
-        for key, value in result_scores.out.items():
-            tools.dump_results_to_json(key, value, options.output)
+        run_basic_ml(df, options.number_iterations, options.model, options.kFold, "123", True, options.output)
 
     elif options.nClass == 2:
         # Done: Read the data and separate into 3 different dataframes.
-        # TODO: For each pair combination combine it, shuffle it
+        # Done: For each pair combination combine it, shuffle it
         # TODO: Randomnly split it into training and testing set
         # TODO: Fit the models and write the scores into JSON files
         # TODO: Visualization should be fixed for that new JSON files
@@ -64,9 +68,16 @@ def main():
 
         df1, df2, df3 = tools.data_extraction(options.data, options.nClass)
         # Combining two pairs off all combination
-        df12 = shuffle(df1.append(df2))
-        df23 = shuffle(df2.append(df3))
-        df31 = shuffle(df3.append(df1))
+        df12 = df1.append(df2)
+        df23 = df2.append(df3)
+        df31 = df3.append(df1)
+        # Handle missing values
+        df12 = mlu.missing_values(df12)
+        df23 = mlu.missing_values(df23)
+        df31 = mlu.missing_values(df31)
+        run_basic_ml(df12, options.number_iterations, options.model, options.kFold, "12", True, options.output)
+        run_basic_ml(df23, options.number_iterations, options.model, options.kFold, "23", True, options.output)
+        run_basic_ml(df31, options.number_iterations, options.model, options.kFold, "31", True, options.output)
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))
