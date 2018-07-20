@@ -44,6 +44,7 @@ def main():
         i = i+1
 
     plt.show()
+    #plt.savefig("mv1")
 
 if __name__ == "__main__":
     main()

@@ -38,6 +38,9 @@ def parse_options():
                         default="outputs/", type=str,
                         help="Output Folder where results are to stored")
 
+    parser.add_argument("--missing_data", required=False,
+                        default=0, type=int,
+                        help="0-> fill it with 0; 1-> Mean Replacement; 2-> Median Replacement")
     options = parser.parse_args()
     return options
 

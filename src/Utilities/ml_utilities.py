@@ -1,4 +1,5 @@
 import math
+import pandas as pd
 from sklearn.utils import shuffle
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
@@ -51,18 +52,34 @@ def get_features_labels(train):
 
     return X,y
 
-def missing_values(df):
+
+def missing_values(df, method=0):
     """
     This function replaces NaN in the df with 0. This is temporary fix.
     @TODO: Should do research for better method to handle missing solutions
     :param df: panda dataFrame which has means of ROIs
+    :param method: 0 for filling it with 0s, 1 for mean replacement
     :return: panda dataFrame which has means of ROIs with no missing values
     """
-    #TODO: Should do research for better method to handle missing solutions
+    # TODO: Should do research for better method to handle missing solutions
 
-    np.all(np.isfinite(df))  # to check if there is any infinite number
-    np.any(np.isnan(df))  # to check if there is any nan
+    # np.all(np.isfinite(df))  # to check if there is any infinite number
+    # np.any(np.isnan(df))  # to check if there is any nan
+    # np.where(np.asanyarray(np.isnan(df)))  # to find the index of nan
 
-    np.where(np.asanyarray(np.isnan(df)))  # to find the index of nan
-    df = df.fillna(0)  # replace nan with 0
+    if method == 1:
+        # Mean replacement for nan numbers in particular label with the mean of non missing values in the same label.
+        tdf = pd.DataFrame(columns=df.columns)
+        for l in df.label.unique():
+            tdf = tdf.append(df[df.label == l].fillna(df[df.label == l].mean()))
+        df = tdf
+    elif method == 2:
+        # Mean replacement for nan numbers in particular label with the mean of non missing values in the same label.
+        tdf = pd.DataFrame(columns=df.columns)
+        for l in df.label.unique():
+            tdf = tdf.append(df[df.label == l].fillna(df[df.label == l].median()))
+        df = tdf
+    else:
+        df = df.fillna(0) # replace nan with 0
+
     return df
