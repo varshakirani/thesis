@@ -38,8 +38,19 @@ def model_fitting(model_name, X, y, kFold = 10):
     scores = cross_val_score(model, X, y, cv=cv)
     #print("Model: %s, Accuracy: %0.2f (+/- %0.2f)" % (model_name, scores.mean(), scores.std() * 2))
 
-    return scores
+    return scores, model
 
+
+def model_test(test, model):
+    # Testing
+    test_data = test.loc[:, test.columns != "label"].values
+    test_actual_results = np.asarray(test.label).astype(float)
+    test_prediction = model.predict(test_data)
+    total_test_samples = test_data.shape[0]
+    total_correct_predictions = np.count_nonzero(test_actual_results == test_prediction)
+    test_accuracy = np.asarray(total_correct_predictions / total_test_samples)
+    #print("Test Accuracy is {}.".format(test_accuracy))
+    return test_accuracy
 
 def get_features_labels(train):
     """

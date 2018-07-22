@@ -46,15 +46,21 @@ def parse_options():
 
 def data_extraction(data_folder, nClass):
     """
+    This function currently reads single contrast
     :param data_folder: Path to the folder that contains Data
     :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
 
     data = sio.loadmat(data_folder+"/Faces_con_0001.mat")
-
+    data_list = []
+    for i in range(len(data["means"])):
+        d = data["means"][i], data["label"][0][i]
+        data_list.append(d)
     columns = ["means", "label"]
-    # df = pd.DataFrame({'A':1,'B':2}, index = None)
+
+    """
+
     data_list = []
     for matFile in os.listdir(data_folder):
         if matFile.startswith("Faces") and not matFile.endswith("389.mat"):
@@ -62,6 +68,7 @@ def data_extraction(data_folder, nClass):
             for i in range(len(data["means"])):
                 d = data["means"][i], data["label"][0][i]
                 data_list.append(d)
+    """
 
     df = pd.DataFrame(data_list, columns=columns)
     RoiNames = (data["RoiName"][:, 0])
@@ -71,7 +78,8 @@ def data_extraction(data_folder, nClass):
     df[colRoi] = pd.DataFrame(df.means.values.tolist(), index=df.index)
     df.drop(['means'], axis=1, inplace=True)
 
-    if nClass == 3: #No need for separated data
+    print(df.shape)
+    if nClass == 3: # No need for separated data
         return df
 
     elif nClass == 2:
@@ -80,21 +88,23 @@ def data_extraction(data_folder, nClass):
         df3 = df[df.label == 3]
         return df1, df2, df3
 
-def dump_results_to_json(model_name, results, output_folder, n):
+
+def dump_results_to_json(model_name, results, output_folder, n, typeS="train"):
     """
     :param model_name: Machine learning model name
     :param results: Scores of kFold stratified cross Validation
+    :param output_folder: Folder where the json has to be written
+    :param n: option of classes. 12 or 23 or 31 or 123. Used for naming the files"
+    :param typeS: train results or test results
     :return:
     """
 
-    res_file = open(output_folder+"results_%s_%s.json" % (model_name,n), "w", encoding='utf-8' )
-    #jsonList = [o.__dict__ for o in results]
+    res_file = open(output_folder+"results_%s_%s_%s.json" % (model_name, typeS, n), "w", encoding='utf-8')
+    # jsonList = [o.__dict__ for o in results]
+    json_list = [o.tolist() for o in results]
+    json.dumps(json_list)
 
-
-    jsonList = [o.tolist() for o in results]
-    json.dumps(jsonList)
-
-    json.dump(jsonList, res_file, sort_keys=True, indent=4)
+    json.dump(json_list, res_file, sort_keys=True, indent=4)
 
 
 

@@ -7,7 +7,8 @@ sys.path.insert(0, '/Users/varshakirani/Documents/TUB/Thesis/imp/thesis/src/Util
 import tools
 import ml_utilities as mlu
 
-
+# Done : Consider only one contrast
+# Todo : Get testing results
 class Result:
     """
     Result contains the cross validation scores of the respective machine learning algorithms which are run through
@@ -15,35 +16,45 @@ class Result:
     """
 
     out = {}
+    test_scores = {}
 
-    def __init__(self, svm, naive_bayes, decision_tree):
-
-        self.out["svm"] = svm
-        self.out["naive_bayes"] = naive_bayes
-        self.out["decision_tree"] = decision_tree
-
-        #def append_svm_scores(self, svm = []):
-        #self.svm.append(svm)
+    def __init__(self):#, svm=[], naive_bayes=[], decision_tree=[]):
+        self.test_scores["svm"] = []
+        self.test_scores["naive_bayes"] = []
+        self.test_scores["decision_tree"] = []
+        self.out["svm"] = []
+        self.out["naive_bayes"] = []
+        self.out["decision_tree"] = []
 
 
 def run_basic_ml(df, number_iterations, model_option, kFold,n, dump=False, output="."):
     train, test = mlu.train_test_split(df)
     models = ["svm", "naive_bayes", "decision_tree"]
 
-    result_scores = Result([], [], [])
+    result_scores = Result()
     for i in range(number_iterations):
         # print("Running iteration :%s  " % (i + 1))
         X, y = mlu.get_features_labels(shuffle(train))
         if model_option == "all":
-            for model in models:
-                scores = mlu.model_fitting(model, X, y, kFold)
-                result_scores.out[model].append(scores)
+            for model_name in models:
+                scores, trained_model = mlu.model_fitting(model_name, X, y, kFold)
+                result_scores.out[model_name].append(scores)
+                test_scores = mlu.model_test(test, trained_model)
+                result_scores.test_scores[model_name].append(test_scores)
         else:
-            scores = mlu.model_fitting(model_option, X, y, kFold)
+            scores, trained_model = mlu.model_fitting(model_option, X, y, kFold)
             result_scores.out["svm"].append(scores)
+            mlu.model_test(test, trained_model)
+            result_scores.test_scores["svm"].append(test_scores)
+
     if dump:
         for key, value in result_scores.out.items():
-            tools.dump_results_to_json(key, value, output, n)
+            tools.dump_results_to_json(key, value, output, n, "train")
+
+        for key, value in result_scores.test_scores.items():
+            tools.dump_results_to_json(key, value, output, n, "test")
+
+    return trained_model
 
 
 def main():
@@ -55,7 +66,7 @@ def main():
         # Read Data and put it into panda data frame. Initially considering only means
         df = tools.data_extraction(options.data, options.nClass)
         df = mlu.missing_values(df)
-        run_basic_ml(df, options.number_iterations, options.model, options.kFold, "123", True, options.output)
+        model = run_basic_ml(df, options.number_iterations, options.model, options.kFold, "123", True, options.output)
 
     elif options.nClass == 2:
         # Done: Read the data and separate into 3 different dataframes.
@@ -75,9 +86,9 @@ def main():
         df12 = mlu.missing_values(df12)
         df23 = mlu.missing_values(df23)
         df31 = mlu.missing_values(df31)
-        run_basic_ml(df12, options.number_iterations, options.model, options.kFold, "12", True, options.output)
-        run_basic_ml(df23, options.number_iterations, options.model, options.kFold, "23", True, options.output)
-        run_basic_ml(df31, options.number_iterations, options.model, options.kFold, "31", True, options.output)
+        model = run_basic_ml(df12, options.number_iterations, options.model, options.kFold, "12", True, options.output)
+        model = run_basic_ml(df23, options.number_iterations, options.model, options.kFold, "23", True, options.output)
+        model = run_basic_ml(df31, options.number_iterations, options.model, options.kFold, "31", True, options.output)
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))
