@@ -28,13 +28,14 @@ class Result:
 
 
 def run_basic_ml(df, number_iterations, model_option, kFold,n, dump=False, output="."):
-    train, test = mlu.train_test_split(df)
+
     models = ["svm", "naive_bayes", "decision_tree"]
 
     result_scores = Result()
     for i in range(number_iterations):
         # print("Running iteration :%s  " % (i + 1))
-        X, y = mlu.get_features_labels(shuffle(train))
+        train, test = mlu.train_test_split(df)
+        X, y = mlu.get_features_labels((train))
         if model_option == "all":
             for model_name in models:
                 scores, trained_model = mlu.model_fitting(model_name, X, y, kFold)
@@ -44,7 +45,7 @@ def run_basic_ml(df, number_iterations, model_option, kFold,n, dump=False, outpu
         else:
             scores, trained_model = mlu.model_fitting(model_option, X, y, kFold)
             result_scores.out["svm"].append(scores)
-            mlu.model_test(test, trained_model)
+            test_scores = mlu.model_test(test, trained_model)
             result_scores.test_scores["svm"].append(test_scores)
 
     if dump:

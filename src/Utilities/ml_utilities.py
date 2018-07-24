@@ -50,6 +50,7 @@ def model_test(test, model):
     total_correct_predictions = np.count_nonzero(test_actual_results == test_prediction)
     test_accuracy = np.asarray(total_correct_predictions / total_test_samples)
     #print("Test Accuracy is {}.".format(test_accuracy))
+    #print(test_accuracy)
     return test_accuracy
 
 def get_features_labels(train):
