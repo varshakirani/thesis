@@ -6,6 +6,7 @@ import scipy.io as sio
 import sys
 import os
 import pandas as pd
+import numpy as np
 
 
 def parse_options():
@@ -44,7 +45,7 @@ def parse_options():
     options = parser.parse_args()
     return options
 
-def data_extraction(data_folder, nClass):
+def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
     """
     This function currently reads single contrast
     :param data_folder: Path to the folder that contains Data
@@ -52,7 +53,7 @@ def data_extraction(data_folder, nClass):
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
 
-    data = sio.loadmat(data_folder+"/Faces_con_0001.mat")
+    data = sio.loadmat(data_folder+"/" + mat_file)
     data_list = []
     for i in range(len(data["means"])):
         d = data["means"][i], data["label"][0][i]
@@ -77,6 +78,7 @@ def data_extraction(data_folder, nClass):
         colRoi.append(roi[0])
     df[colRoi] = pd.DataFrame(df.means.values.tolist(), index=df.index)
     df.drop(['means'], axis=1, inplace=True)
+    df["subject_cont"] = pd.DataFrame(np.transpose(data["subject_cont"]))
 
     print(df.shape)
     if nClass == 3: # No need for separated data
@@ -105,6 +107,9 @@ def dump_results_to_json(model_name, results, output_folder, n, typeS="train"):
     json.dumps(json_list)
 
     json.dump(json_list, res_file, sort_keys=True, indent=4)
+
+
+
 
 
 
