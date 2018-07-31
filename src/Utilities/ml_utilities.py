@@ -24,7 +24,7 @@ def train_test_split(df):
     return train, test
 
 def model_fitting(model_name, X, y, kFold = 10):
-    if model_name == "svm":
+    if model_name == "svm_kernel":
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
     elif model_name == "naive_bayes":
         model = GaussianNB()
@@ -68,7 +68,7 @@ def get_features_labels(train):
     return X,y
 
 
-def missing_values(df, method=0):
+def missing_values(df, method=1):
     """
     This function replaces NaN in the df with 0. This is temporary fix.
     @TODO: Should do research for better method to handle missing solutions
@@ -84,17 +84,12 @@ def missing_values(df, method=0):
 
     if method == 1:
         # Mean replacement for nan numbers in particular label with the mean of non missing values in the same label.
-        tdf = pd.DataFrame(columns=df.columns)
-        for l in df.label.unique():
-            tdf = tdf.append(df[df.label == l].fillna(df[df.label == l].mean()))
-        df = tdf
-    elif method == 2:
-        # Mean replacement for nan numbers in particular label with the mean of non missing values in the same label.
-        tdf = pd.DataFrame(columns=df.columns)
-        for l in df.label.unique():
-            tdf = tdf.append(df[df.label == l].fillna(df[df.label == l].median()))
-        df = tdf
-    else:
-        df = df.fillna(0) # replace nan with 0
+        df.fillna(df.mean(), inplace=True)
 
+    elif method == 2:
+        # Median replacement for nan numbers in particular label with the Median of non missing values in the same label
+        df.fillna(df.median(), inplace=True)
+    else:
+
+        df.fillna(0, inplace=True)
     return df
