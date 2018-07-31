@@ -23,10 +23,6 @@ def parse_options():
                         default=10, type=int,
                         help="k fold number in Stratified Cross Validation")
 
-    parser.add_argument( "--nClass", required=False,
-                        default=3, type=int,
-                        help="3 class or 2 class classifier.")
-
     parser.add_argument("-d", "--data", required=False,
                         default="../../Data", type=str,
                         help="Path to data folder")
