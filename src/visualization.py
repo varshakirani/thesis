@@ -23,6 +23,7 @@ def main():
     options = parse_options()
     classes = ["12", "23", "31", "123"]
 
+    print("Visualization of Training scores")
     fig, axes = plt.subplots(nrows=2, ncols=2)
     axs = axes.ravel()
     i = 0
@@ -44,8 +45,14 @@ def main():
             axs[i].set_title(c)
 
         i = i+1
+    plt.suptitle("Training Scores")
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
 
+    plt.savefig("out/visualization/train_hist.png")
     plt.show()
+
+    print("Visualization of testing scores")
     fig, axes = plt.subplots(nrows=2, ncols=2)
     axs = axes.ravel()
     i = 0
@@ -69,9 +76,13 @@ def main():
             axs[i].set_title(c)
 
         i = i + 1
+    plt.suptitle("Testing Scores")
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
 
+    plt.savefig("out/visualization/test_hist.png")
     plt.show()
-
+    print("Visualization of both train and test ")
     fig, axes = plt.subplots(nrows=4, ncols=3)
     axs = axes.ravel()
     i = 0
@@ -88,8 +99,6 @@ def main():
             model_name = json_file.split(".")[0][8:]
             results_test[model_name] = json.load(open(options.output + "/" + json_file))
 
-
-
     for (model_train, scores_train), (model_test, scores_test) in zip(results_train.items(), results_test.items()):
         class_det = model_train.split("_")[-1]
         model_name = model_train.split("_")[0:-2]
@@ -102,7 +111,47 @@ def main():
         axs[i].legend(loc='upper left')
         i = i + 1
 
+    plt.suptitle("Both Training and testing")
 
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+
+    plt.savefig("out/visualization/train_test.png")
+    plt.show()
+
+
+####################
+    fig, axes = plt.subplots(nrows=2, ncols=2)
+    axs = axes.ravel()
+    i = 0
+
+    for c in classes:
+
+        results_test = {}
+
+        for json_file in os.listdir(options.output):
+            data_type = json_file.split(".")[0].split("_")[-2]
+
+            if json_file.split(".")[0].split("_")[-1] == c and data_type == "test":
+
+                model_name = json_file.split(".")[0][8:]
+                results_test[model_name] = json.load(open(options.output + "/" + json_file))
+
+        for model, scores in results_test.items():
+            scores = np.array(scores)
+            x_values = np.arange(len(scores))
+            label_str = "%s. Mean:%s" % (' '.join(map(str, model.split("_")[:-2])), mean(scores))
+            axs[i].plot(x_values, scores, label=label_str)
+            axs[i].legend(loc="upper right")
+            axs[i].set_title(c)
+            axs[i].set_ylim([0, 1])
+
+        i = i + 1
+    plt.suptitle("Testing Scores")
+    mng = plt.get_current_fig_manager()
+    mng.resize(*mng.window.maxsize())
+
+    plt.savefig("out/visualization/test_line.png")
     plt.show()
 
 
