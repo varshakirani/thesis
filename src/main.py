@@ -9,7 +9,7 @@ import ml_utilities as mlu
 # Todo: use the same for visualization.
 # Todo: Remove old code and commit in the github
 
-def run_basic_ml(df, number_iterations, model_option, kFold,n,scoresdf, dump=False, output="."):
+def run_basic_ml(df, number_iterations, model_option, kFold, n, scoresdf):
 
     models = ["svm_kernel", "naive_bayes", "decision_tree"]
     for i in range(number_iterations):
@@ -38,9 +38,6 @@ def run_basic_ml(df, number_iterations, model_option, kFold,n,scoresdf, dump=Fal
             scoresdf = scoresdf.append(
                 {'Score': test_score, 'Type': 'test', 'Model': 'svm_kernel', 'Classifier': n}, ignore_index=True)
 
-    if dump:
-        scoresdf.to_csv(output+"/without_kfold.csv", index = False)
-
     return scoresdf
 
 def main():
@@ -54,36 +51,31 @@ def main():
             # Read Data and put it into panda data frame. Initially considering only means
             df = tools.data_extraction(options.data, nClass)
             df = mlu.missing_values(df)
-            scoresdf = run_basic_ml(df, options.number_iterations, options.model, options.kFold, 123, scoresdf, False,
-                                    options.output)
+            print("ML on 123")
+            scoresdf = run_basic_ml(df, options.number_iterations, options.model, options.kFold, 123, scoresdf)
 
-        elif options.nClass == 2:
-            print("biClass Classification for every pair among Bipolar(1), Schizophrenia(2) and Control(3)")
-
-            print("data extraction")
+        elif nClass == 2:
             df1, df2, df3 = tools.data_extraction(options.data, nClass)
             # Combining two pairs off all combination
             df12 = df1.append(df2)
             df23 = df2.append(df3)
             df31 = df3.append(df1)
-            # Handle missing values
-            print("Missing Value Handling")
 
+            # Handle missing values
             df12 = mlu.missing_values(df12)
             df23 = mlu.missing_values(df23)
             df31 = mlu.missing_values(df31)
 
             print("ML on 12")
-            scoresdf = run_basic_ml(df12, options.number_iterations, options.model, options.kFold, 12, scoresdf, False,
-                                    options.output)
+            scoresdf = run_basic_ml(df12, options.number_iterations, options.model, options.kFold, 12, scoresdf)
             print("ML on 23")
-            scoresdf = run_basic_ml(df23, options.number_iterations, options.model, options.kFold, 23, scoresdf,
-                                            False, options.output)
+            scoresdf = run_basic_ml(df23, options.number_iterations, options.model, options.kFold, 23, scoresdf)
             print("ML on 31")
-            scoresdf = run_basic_ml(df31, options.number_iterations, options.model, options.kFold, 31, scoresdf, False,
-                                    options.output)
+            scoresdf = run_basic_ml(df31, options.number_iterations, options.model, options.kFold, 31, scoresdf)
 
     print(scoresdf.shape)
+
+    scoresdf.to_csv(options.output+"/without_kfold.csv", index=False)
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))
