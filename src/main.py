@@ -22,14 +22,16 @@ class Result:
         self.test_scores["svm"] = []
         self.test_scores["naive_bayes"] = []
         self.test_scores["decision_tree"] = []
+        self.test_scores["svm_linear"] = []
         self.out["svm"] = []
         self.out["naive_bayes"] = []
         self.out["decision_tree"] = []
+        self.out["svm_linear"] = []
 
 
 def run_basic_ml(df, number_iterations, model_option, kFold,n, dump=False, output="."):
 
-    models = ["svm", "naive_bayes", "decision_tree"]
+    models = ["svm", "naive_bayes", "decision_tree", "svm_linear"]
 
     result_scores = Result()
     for i in range(number_iterations):
@@ -78,17 +80,24 @@ def main():
 
         print("biClass Classification for every pair among Bipolar(1), Schizophrenia(2) and Control(3)")
 
+        print("data extraction")
         df1, df2, df3 = tools.data_extraction(options.data, options.nClass)
         # Combining two pairs off all combination
         df12 = df1.append(df2)
         df23 = df2.append(df3)
         df31 = df3.append(df1)
         # Handle missing values
+        print("Missing Value Handling")
+
         df12 = mlu.missing_values(df12)
         df23 = mlu.missing_values(df23)
         df31 = mlu.missing_values(df31)
+
+        print("ML on 12")
         model = run_basic_ml(df12, options.number_iterations, options.model, options.kFold, "12", True, options.output)
+        print("ML on 23")
         model = run_basic_ml(df23, options.number_iterations, options.model, options.kFold, "23", True, options.output)
+        print("ML on 31")
         model = run_basic_ml(df31, options.number_iterations, options.model, options.kFold, "31", True, options.output)
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,

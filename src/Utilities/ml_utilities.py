@@ -30,6 +30,8 @@ def model_fitting(model_name, X, y, kFold = 10):
         model = GaussianNB()
     elif model_name == "decision_tree":
         model = DecisionTreeClassifier()
+    elif model_name =="svm_linear":
+        model = svm.SVC(kernel="linear")
     else:
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
 
