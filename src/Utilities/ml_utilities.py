@@ -37,7 +37,8 @@ def model_fitting(model_name, X, y, kFold = 10):
 
     cv = StratifiedKFold(kFold)
     model.fit(X, y)
-    scores = cross_val_score(model, X, y, cv=cv)
+    #scores = cross_val_score(model, X, y, cv=cv)
+    scores = model.score(X, y)
     #print("Model: %s, Accuracy: %0.2f (+/- %0.2f)" % (model_name, scores.mean(), scores.std() * 2))
 
     return scores, model
