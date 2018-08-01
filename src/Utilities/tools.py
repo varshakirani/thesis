@@ -38,6 +38,11 @@ def parse_options():
     parser.add_argument("--missing_data", required=False,
                         default=0, type=int,
                         help="0-> fill it with 0; 1-> Mean Replacement; 2-> Median Replacement")
+
+    parser.add_argument("-t", "--tuning", required=False, default=False,
+                       action="store_true",
+                        help="If hyperparameter has to be tuned, this option has to be set to True. "
+                             "For eg: C and gamma for rbf kernel SVM will be tuned with this option.")
     options = parser.parse_args()
     return options
 
@@ -48,7 +53,7 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
     :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
-
+    contrast_name = mat_file.split(".")[0]
     data = sio.loadmat(data_folder+"/" + mat_file)
     data_list = []
     for i in range(len(data["means"])):
@@ -78,13 +83,13 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
 
     print(df.shape)
     if nClass == 3: # No need for separated data
-        return df
+        return df,contrast_name
 
     elif nClass == 2:
         df1 = df[df.label == 1]
         df2 = df[df.label == 2]
         df3 = df[df.label == 3]
-        return df1, df2, df3
+        return df1, df2, df3, contrast_name
 
 
 def dump_results_to_json(model_name, results, output_folder, n, typeS="train"):
