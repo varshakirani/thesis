@@ -9,7 +9,7 @@ import ml_utilities as mlu
 # Todo: use the same for visualization.
 # Todo: Remove old code and commit in the github
 
-def run_basic_ml(df, number_iterations, model_option, kFold, n, scoresdf):
+def run_basic_ml(df, number_iterations, model_option, kFold, n, scoresdf, contrast_name):
 
     models = ["svm_kernel", "naive_bayes", "decision_tree"]
     for i in range(number_iterations):
@@ -22,10 +22,11 @@ def run_basic_ml(df, number_iterations, model_option, kFold, n, scoresdf):
                 train_score, trained_model = mlu.model_fitting(model_name, X, y, kFold)
                 test_score = trained_model.score(tX, ty)
                 scoresdf = scoresdf.append(
-                    {'Score': train_score, 'Type': 'train', 'Model': model_name, 'Classifier': n},
-                    ignore_index=True)
+                    {'Score': train_score, 'Type': 'train', 'Model': model_name, 'Classifier': n,
+                     'Contrast_name':contrast_name}, ignore_index=True)
                 scoresdf = scoresdf.append(
-                    {'Score': test_score, 'Type': 'test', 'Model': model_name, 'Classifier': n}, ignore_index=True)
+                    {'Score': test_score, 'Type': 'test', 'Model': model_name, 'Classifier': n,
+                     'Contrast_name':contrast_name}, ignore_index=True)
 
 
 
@@ -33,10 +34,11 @@ def run_basic_ml(df, number_iterations, model_option, kFold, n, scoresdf):
             train_score, trained_model = mlu.model_fitting(model_name, X, y, kFold)
             test_score = trained_model.score(tX, ty)
             scoresdf = scoresdf.append(
-                {'Score': train_score, 'Type': 'train', 'Model': 'svm_kernel', 'Classifier': n},
-                ignore_index=True)
+                {'Score': train_score, 'Type': 'train', 'Model': 'svm_kernel', 'Classifier': n,
+                 'Contrast_name':contrast_name}, ignore_index=True)
             scoresdf = scoresdf.append(
-                {'Score': test_score, 'Type': 'test', 'Model': 'svm_kernel', 'Classifier': n}, ignore_index=True)
+                {'Score': test_score, 'Type': 'test', 'Model': 'svm_kernel', 'Classifier': n,
+                 'Contrast_name':contrast_name}, ignore_index=True)
 
     return scoresdf
 
@@ -49,13 +51,13 @@ def main():
 
         if nClass == 3:
             # Read Data and put it into panda data frame. Initially considering only means
-            df = tools.data_extraction(options.data, nClass)
+            df, contrast_name = tools.data_extraction(options.data, nClass)
             df = mlu.missing_values(df)
             print("ML on 123")
-            scoresdf = run_basic_ml(df, options.number_iterations, options.model, options.kFold, 123, scoresdf)
+            scoresdf = run_basic_ml(df, options.number_iterations, options.model, options.kFold, 123, scoresdf,contrast_name)
 
         elif nClass == 2:
-            df1, df2, df3 = tools.data_extraction(options.data, nClass)
+            df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass)
             # Combining two pairs off all combination
             df12 = df1.append(df2)
             df23 = df2.append(df3)
@@ -67,11 +69,11 @@ def main():
             df31 = mlu.missing_values(df31)
 
             print("ML on 12")
-            scoresdf = run_basic_ml(df12, options.number_iterations, options.model, options.kFold, 12, scoresdf)
+            scoresdf = run_basic_ml(df12, options.number_iterations, options.model, options.kFold, 12, scoresdf , contrast_name)
             print("ML on 23")
-            scoresdf = run_basic_ml(df23, options.number_iterations, options.model, options.kFold, 23, scoresdf)
+            scoresdf = run_basic_ml(df23, options.number_iterations, options.model, options.kFold, 23, scoresdf ,contrast_name)
             print("ML on 31")
-            scoresdf = run_basic_ml(df31, options.number_iterations, options.model, options.kFold, 31, scoresdf)
+            scoresdf = run_basic_ml(df31, options.number_iterations, options.model, options.kFold, 31, scoresdf, contrast_name)
 
     print(scoresdf.shape)
 
