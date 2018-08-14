@@ -43,6 +43,15 @@ def parse_options():
                        action="store_true",
                         help="If hyperparameter has to be tuned, this option has to be set to True. "
                              "For eg: C and gamma for rbf kernel SVM will be tuned with this option.")
+
+    parser.add_argument("-c", "--combine", required=False,
+                        default=False, action="store_true",
+                        help="An indicator to combine 2 contrasts side by side keeping subject number in mind")
+
+    parser.add_argument('-i', '--input', required=True,
+                        default='out/output_scores_testing/Faces_con_0001&Faces_con_0001_389.csv', type=str,
+                        help='Path to input csv file which contains information about the scores ')
+
     options = parser.parse_args()
     return options
 
@@ -50,6 +59,7 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
     """
     This function currently reads single contrast
     :param data_folder: Path to the folder that contains Data
+    :param nClass: 2: for divinding the labels for biclass, 3: all 3 class in same dataframe
     :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
@@ -90,6 +100,32 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
         df2 = df[df.label == 2]
         df3 = df[df.label == 3]
         return df1, df2, df3, contrast_name
+
+def combine_contrast(data_folder,nClass, contrast1='Faces_con_0001.mat', contrast2='Faces_con_0001_389.mat'):
+    """
+    Combines the two contrast with respect to subject_cont. It performs inner join. Returns panda dataframes according to nClass
+    :param data_folder: Input folder which contains the contrast mat file
+    :param nClass: 2: 3 dataframes of 2 labels combination, 3: all 3 class in same dataframe
+    :param contrast1: First contrast for the merge
+    :param contrast2: Second contrast for the merge
+    :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
+            df1, df2, df3: Separated dataframes for each class when nClass is 2
+    """
+    df1,contrast1 = data_extraction(data_folder,3,contrast1)
+    df2,contrast2 = data_extraction(data_folder,3,contrast2)
+
+    df = pd.merge(df1,df2,how='inner',on='subject_cont')
+    df['label'] = df['label_x'] & df['label_y']
+    df.drop(['label_y','label_x'], axis=1, inplace=True)
+    if nClass == 3: # No need for separated data
+        return df, contrast1 + "&" + contrast2
+
+    elif nClass == 2:
+        df1 = df[df.label == 1]
+        df2 = df[df.label == 2]
+        df3 = df[df.label == 3]
+        return df1, df2, df3, contrast1 + "&" + contrast2
+
 
 
 def dump_results_to_json(model_name, results, output_folder, n, typeS="train"):

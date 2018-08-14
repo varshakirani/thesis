@@ -5,15 +5,22 @@ import pandas as pd
 import tools
 import ml_utilities as mlu
 import os
+import logging
 
 # Todo: change output variable to pandas dataFrame. Store as csv file and
 # Todo: use the same for visualization.
 # Todo: Remove old code and commit in the github
 
 
-def run_basic_ml(df, options, n, scoresdf, contrast_name):
+# Create and configure the logger
+# LOG_FORMAT = "%(levelname)s %(asctime)s - %(message)s"
+# logging.basicConfig(filename='logs/running_ml.log', level=logging.DEBUG, format=LOG_FORMAT)
+# logger = logging.getLogger()
 
-    models = ["svm_kernel", "naive_bayes", "decision_tree"]
+# logger.info('Running all the ml models on all the contrast')
+def run_basic_ml(df, options, n, scoresdf, contrast_name):
+    print(contrast_name)
+    models = ["svm_kernel", "naive_bayes", "decision_tree", "rfc"]
 
     for i in range(options.number_iterations):
         train, test = mlu.train_test_split(df)
@@ -22,27 +29,26 @@ def run_basic_ml(df, options, n, scoresdf, contrast_name):
 
         if options.model == "all":
             for model_name in models:
-                train_score, trained_model = mlu.model_fitting(model_name, x_train, y_train, options.kFold,  options.tuning,)
+                #logger.debug("Running the %s model of the %s th iteration for %s contrast" %(model_name, i, contrast_name))
+                train_score, trained_model, tunned = mlu.model_fitting(model_name, x_train, y_train, options.kFold,  options.tuning,)
                 test_score = trained_model.score(x_test, y_test)
+                #print(model_name + " Train:"+ str(train_score) + "  Test:" +str(test_score) +" Contrast:" +contrast_name)
                 scoresdf = scoresdf.append(
                     {'Score': train_score, 'Type': 'train', 'Model': model_name, 'Classifier': n,
-                     'Contrast_name':contrast_name}, ignore_index=True)
+                     'Contrast_name':contrast_name, 'Tunned':tunned}, ignore_index=True)
                 scoresdf = scoresdf.append(
                     {'Score': test_score, 'Type': 'test', 'Model': model_name, 'Classifier': n,
-                     'Contrast_name':contrast_name}, ignore_index=True)
+                     'Contrast_name':contrast_name, 'Tunned':tunned}, ignore_index=True)
 
         else:
-            if len(scoresdf[(scoresdf['Contrast_name'] == contrast_name) & (scoresdf['Model'] == model_name)
-                    & (scoresdf['Tuning'] == options.tuning)]):
-                continue
-            train_score, trained_model = mlu.model_fitting(model_name, x_train, y_train, options.kFold,  options.tuning,)
+            train_score, trained_model, tunned = mlu.model_fitting(options.model, x_train, y_train, options.kFold,  options.tuning,)
             test_score = trained_model.score(x_test, y_test)
             scoresdf = scoresdf.append(
-                {'Score': train_score, 'Type': 'train', 'Model': 'svm_kernel', 'Classifier': n,
-                 'Contrast_name':contrast_name}, ignore_index=True)
+                {'Score': train_score, 'Type': 'train', 'Model': options.model, 'Classifier': n,
+                 'Contrast_name':contrast_name, 'Tunned':tunned}, ignore_index=True)
             scoresdf = scoresdf.append(
-                {'Score': test_score, 'Type': 'test', 'Model': 'svm_kernel', 'Classifier': n,
-                 'Contrast_name':contrast_name}, ignore_index=True)
+                {'Score': test_score, 'Type': 'test', 'Model': options.model, 'Classifier': n,
+                 'Contrast_name':contrast_name, 'Tunned':tunned}, ignore_index=True)
 
     return scoresdf
 
@@ -52,15 +58,21 @@ def main():
     options = tools.parse_options()
     start = time.time()
 
-    o_subtitle = 'without_tuning'
+    o_subtitle = ''
+    if options.combine:
+        o_subtitle = 'combined'
+
     if options.tuning:
-        o_subtitle = 'with_tuning'
+        o_subtitle = o_subtitle+'_'+'with_tuning'
+    else:
+        o_subtitle = o_subtitle+'_'+'without_tuning'
 
 
-    if os.path.isfile(options.output + '%s.csv'%(o_subtitle)):
-        scoresdf = pd.read_csv(options.output + '%s.csv' % (o_subtitle))
+    if os.path.isfile(options.input):
+        scoresdf = pd.read_csv(options.input)
     else:
         scoresdf = pd.DataFrame(columns=['Score', 'Type', 'Model', 'Classifier', 'Contrast_name'])
+
 
     for mat_file in os.listdir(options.data):
         print(mat_file)
@@ -73,15 +85,22 @@ def main():
         for nClass in range(2,4,1):
 
             if nClass == 3:
+
                 # Read Data and put it into panda data frame. Initially considering only means
-                df, contrast_name = tools.data_extraction(options.data, nClass, mat_file)
+                if options.combine:
+                    df, contrast = tools.combine_contrast(options.data, nClass)
+                else:
+                    df, contrast_name = tools.data_extraction(options.data, nClass, mat_file)
                 df = mlu.missing_values(df)
-                #print("ML on 123")
                 scoresdf = run_basic_ml(df, options, 123, scoresdf,contrast_name)
 
 
             elif nClass == 2:
-                df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, mat_file)
+
+                if options.combine:
+                    df1, df2, df3, contrast_name = tools.combine_contrast(options.data, nClass)
+                else:
+                    df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, mat_file)
                 # Combining two pairs off all combination
                 df12 = df1.append(df2)
                 df23 = df2.append(df3)
@@ -92,16 +111,13 @@ def main():
                 df23 = mlu.missing_values(df23)
                 df31 = mlu.missing_values(df31)
 
-                #print("ML on 12")
                 scoresdf = run_basic_ml(df12, options, 12, scoresdf ,contrast_name)
-                #print("ML on 23")
                 scoresdf = run_basic_ml(df23, options, 23, scoresdf ,contrast_name)
-                #print("ML on 31")
                 scoresdf = run_basic_ml(df31, options, 31, scoresdf, contrast_name)
 
         scoresdf.to_csv(options.output + "%s.csv" % (o_subtitle), index=False)
 
-    print(scoresdf.shape)
+    #print(scoresdf.shape)
 
     #scoresdf.to_csv(options.output+"%s.csv"%(o_subtitle), index=False)
 

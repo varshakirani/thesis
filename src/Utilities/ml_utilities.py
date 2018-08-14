@@ -6,8 +6,12 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+
 
 import numpy as np
+
 
 def train_test_split(df):
     """
@@ -23,25 +27,36 @@ def train_test_split(df):
 
     return train, test
 
-def model_fitting(model_name, X, y, kFold = 10):
+
+def model_fitting(model_name, X, y, kFold=10, tuning=False):
+    tunned = False
     if model_name == "svm_kernel":
-        model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
+        if not tuning:
+            model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
+        elif tuning:
+            param_grid = {'C': [0.1, 1, 10, 100, 1000],
+                          'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['rbf']}
+            grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold)
+            grid.fit(X, y)
+            best_param = grid.best_params_
+            model = svm.SVC(kernel=best_param['kernel'], C=best_param['C'], gamma=best_param['gamma'])
+            tunned = True
+
     elif model_name == "naive_bayes":
         model = GaussianNB()
     elif model_name == "decision_tree":
         model = DecisionTreeClassifier()
     elif model_name =="svm_linear":
         model = svm.SVC(kernel="linear")
+    elif model_name == "rfc":
+        model = RandomForestClassifier(n_estimators=200)
     else:
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
 
-    cv = StratifiedKFold(kFold)
     model.fit(X, y)
-    #scores = cross_val_score(model, X, y, cv=cv)
     scores = model.score(X, y)
-    #print("Model: %s, Accuracy: %0.2f (+/- %0.2f)" % (model_name, scores.mean(), scores.std() * 2))
 
-    return scores, model
+    return scores, model, tunned
 
 
 def model_test(test, model):
@@ -56,14 +71,15 @@ def model_test(test, model):
     #print(test_accuracy)
     return test_accuracy
 
-def get_features_labels(train):
+def get_features_labels(data):
     """
-    :param train: Training dataset
+    :param data: pandas dataframe which has label, subject_cont and ROI mean values
     :return: X: Features and y: corresponding labels
 
     """
-    X = train.loc[:, train.columns != "label"].values
-    y = np.asarray(train.label)
+    data.drop('subject_cont', axis = 1, inplace=True)
+    X = data.loc[:, data.columns != "label"].values
+    y = np.asarray(data.label)
 
     return X,y
 
