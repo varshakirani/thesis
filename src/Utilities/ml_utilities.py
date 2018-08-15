@@ -4,11 +4,8 @@ from sklearn.utils import shuffle
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-
 
 import numpy as np
 
@@ -28,6 +25,29 @@ def train_test_split(df):
     return train, test
 
 
+def balanced_accuracy(predictions, true_values):
+    label1 = list(
+        map(lambda predictions, true_values: predictions == true_values & true_values == 1, predictions, true_values))
+    label2 = list(
+        map(lambda predictions, true_values: predictions == true_values & true_values == 2, predictions, true_values))
+    label3 = list(
+        map(lambda predictions, true_values: predictions == true_values & true_values == 3, predictions, true_values))
+    true_label1 = float(sum(true_values == 1))
+    true_label2 = float(sum(true_values == 2))
+    true_label3 = float(sum(true_values == 3))
+    if not true_label1 :
+        true_label1 = 1.0
+    if not true_label2:
+        true_label2 = 1.0
+    if not true_label3:
+        true_label3 = 1.0
+
+
+    baccuracy = ((sum(label1) / true_label1) +
+                 (sum(label2) / true_label2) +
+                 (sum(label3) / true_label3)) / 3
+
+    return baccuracy
 def model_fitting(model_name, X, y, kFold=10, tuning=False):
     tunned = False
     if model_name == "svm_kernel":
@@ -55,8 +75,10 @@ def model_fitting(model_name, X, y, kFold=10, tuning=False):
 
     model.fit(X, y)
     scores = model.score(X, y)
+    pred = model.predict(X)
+    balanced_accuracy_score = balanced_accuracy(pred,y)
 
-    return scores, model, tunned
+    return scores, balanced_accuracy_score ,model, tunned
 
 
 def model_test(test, model):
@@ -79,7 +101,7 @@ def get_features_labels(data):
     """
     data.drop('subject_cont', axis = 1, inplace=True)
     X = data.loc[:, data.columns != "label"].values
-    y = np.asarray(data.label)
+    y = np.asarray(data.label).astype(int)
 
     return X,y
 
