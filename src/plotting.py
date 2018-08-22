@@ -63,7 +63,7 @@ def plot_boxplot(rows, cols, title, x, y, scoresdf, options):
         plt.clf()
         plt.close()
 
-def performance_plots(df):
+def performance_plots(df, output):
     all_c = df['Contrast_name'].unique()
     face_c = []
     nback_c = []
@@ -103,7 +103,7 @@ def performance_plots(df):
     for i in range(8):
         axs[i].set_xticklabels(['rbf_b', 'rbf', 'nb', 'dt', 'rfc', 'lr'])
         axs[i].set_xlabel('')
-        #axs[i].set_ylim(0.25,0.69 )
+        axs[i].set_ylim(0.25,0.69 )
         if i == 3 :
             continue
         elif i == 7:
@@ -112,7 +112,10 @@ def performance_plots(df):
     for i in range(4,8,1):
         axs[i].set_xlabel('Models')
 
-    plt.show()
+    plt.savefig("%sOverallPerformance.png" % (output))
+    plt.cla()
+    plt.clf()
+    plt.close()
 
 def main():
     options = parse_options()
@@ -161,7 +164,7 @@ def main():
         plt.close()
         """
     if options.performance_plot:
-        performance_plots(scoresdf)
+        performance_plots(scoresdf, options.output)
 
 
 if __name__ == '__main__':

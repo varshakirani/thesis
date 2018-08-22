@@ -6,6 +6,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 import numpy as np
 
@@ -48,20 +49,18 @@ def balanced_accuracy(predictions, true_values):
                  (sum(label3) / true_label3)) / 3
 
     return baccuracy
-def model_fitting(model_name, X, y, kFold=10, tuning=False):
-    tunned = False
-    if model_name == "svm_kernel":
-        if not tuning:
-            model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
-        elif tuning:
-            param_grid = {'C': [0.1, 1, 10, 100, 1000],
-                          'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['rbf']}
-            grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold)
-            grid.fit(X, y)
-            best_param = grid.best_params_
-            model = svm.SVC(kernel=best_param['kernel'], C=best_param['C'], gamma=best_param['gamma'])
-            tunned = True
 
+
+def model_fitting(model_name, X, y, kFold=10):
+    if model_name == "svm_kernel_default":
+        model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
+    elif model_name == "svm_kernel_tuned":
+        param_grid = {'C': [0.1, 1, 10, 100, 1000],
+                        'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['rbf']}
+        grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold)
+        grid.fit(X, y)
+        best_param = grid.best_params_
+        model = svm.SVC(kernel=best_param['kernel'], C=best_param['C'], gamma=best_param['gamma'])
     elif model_name == "naive_bayes":
         model = GaussianNB()
     elif model_name == "decision_tree":
@@ -70,6 +69,8 @@ def model_fitting(model_name, X, y, kFold=10, tuning=False):
         model = svm.SVC(kernel="linear")
     elif model_name == "rfc":
         model = RandomForestClassifier(n_estimators=200)
+    elif model_name == "logistic_regression":
+        model = LogisticRegression()
     else:
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
 
@@ -78,7 +79,7 @@ def model_fitting(model_name, X, y, kFold=10, tuning=False):
     pred = model.predict(X)
     balanced_accuracy_score = balanced_accuracy(pred,y)
 
-    return scores, balanced_accuracy_score ,model, tunned
+    return scores, balanced_accuracy_score ,model
 
 
 def model_test(test, model):
@@ -93,14 +94,15 @@ def model_test(test, model):
     #print(test_accuracy)
     return test_accuracy
 
+
 def get_features_labels(data):
     """
     :param data: pandas dataframe which has label, subject_cont and ROI mean values
     :return: X: Features and y: corresponding labels
 
     """
-    data.drop('subject_cont', axis = 1, inplace=True)
-    X = data.loc[:, data.columns != "label"].values
+    p = data.drop('subject_cont', axis = 1)
+    X = p.loc[:, p.columns != "label"].values
     y = np.asarray(data.label).astype(int)
 
     return X,y
