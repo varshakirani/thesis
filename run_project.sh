@@ -7,20 +7,14 @@
 #TODO For without tuning
 #python src/main.py -d="../Data" -n=100 -o="out/output_scores_testing/" -i="out/output_scores_testing/_without_tuning.csv" --missing_data=1
 
-#TODO For with tuning
-#python src/main.py -d="../Data" -n=100 -o="out/output_scores_testing/" -i="out/output_scores_testing/_with_tuning.csv" --missing_data=1 -t
-
-#TODO For combined without tuning
+#TODO For combined
 #python src/main.py -d="../Data" -n=100 -o="out/output_scores_testing/" -i="out/output_scores_testing/combined_without_tuning.csv" --missing_data=1 -c
-
-#TODO For combined with tuning
-#python src/main.py -d="../Data" -n=100 -o="out/output_scores_testing/" -i="out/output_scores_testing/combined_with_tuning.csv" --missing_data=1 -c -t
 
 #TODO Combined Contrasts.For single output file. Here we have removed tuning parameter. So the data is stored in single file
 #python src/main.py -d="../Data" -n=1 -o="out/svm_check/" -i="out/svm_check/combined.csv" --missing_data=1 -c
 
 #TODO Individual Contrasts.For single output file. Here we have removed tuning parameter. So the data is stored in single file
-#python src/main.py -d="../Data" -n=100 -o="out/without_tuning/" -i="out/without_tuning/individual.csv" --missing_data=1
+python src/main.py -d="../Data" -n=100 -o="out/normalized/" -i="out/normalized/individual.csv" --missing_data=1 --normalize
 
 #TODO Visualization
 
@@ -32,7 +26,7 @@
 #python src/plotting.py -o="out/single_output_file/plots/" -i="out/single_output_file/individual.csv" --type=1 -b
 #python src/plotting.py -o="out/without_tuning/plots/" -i="out/without_tuning/individual.csv" --type=1 -b
 #python src/plotting.py -o="out/svm_check/plots/" -i="out/svm_check/individual.csv" --type=1 -b
-python src/plotting.py -o="out/single_output_file/plots_new/" -i="out/single_output_file/individual.csv" --type=1 -p
+#python src/plotting.py -o="out/single_output_file/plots_new/" -i="out/single_output_file/individual.csv" --type=1 -p
 
 #TODO exploration of the data
 

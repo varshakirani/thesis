@@ -39,14 +39,15 @@ def parse_options():
                         default=0, type=int,
                         help="0-> fill it with 0; 1-> Mean Replacement; 2-> Median Replacement")
 
-    parser.add_argument("-t", "--tuning", required=False, default=False,
-                       action="store_true",
-                        help="If hyperparameter has to be tuned, this option has to be set to True. "
-                             "For eg: C and gamma for rbf kernel SVM will be tuned with this option.")
 
     parser.add_argument("-c", "--combine", required=False,
                         default=False, action="store_true",
                         help="An indicator to combine 2 contrasts side by side keeping subject number in mind")
+
+    parser.add_argument("--normalize", required=False,
+                        default=False, action="store_true",
+                        help="An indicator to specify the normalization of both training and testing set before every "
+                             "fold in cross validation of SVM RBF Kernel hyperparameter tuning ")
 
     parser.add_argument('-i', '--input', required=True,
                         default='out/output_scores_testing/Faces_con_0001&Faces_con_0001_389.csv', type=str,

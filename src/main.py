@@ -17,8 +17,8 @@ import logging
 def run_basic_ml(df, options, n, scoresdf, contrast_name):
     print(contrast_name)
     #models = ["svm_kernel_default", "svm_kernel_tuned", "naive_bayes", "decision_tree", "rfc", 'logistic_regression']
-    #models = ['svm_kernel_default',"svm_kernel_tuned"]
-    models = ["svm_kernel_default","naive_bayes", "decision_tree"]#, "rfc", 'logistic_regression']
+    models = ["svm_kernel_tuned"]
+
     for i in range(options.number_iterations):
         train, test = mlu.train_test_split(df)
         x_train, y_train = mlu.get_features_labels(train)
@@ -27,7 +27,12 @@ def run_basic_ml(df, options, n, scoresdf, contrast_name):
         if options.model == "all":
             for model_name in models:
                 #logger.debug("Running the %s model of the %s th iteration for %s contrast" %(model_name, i, contrast_name))
-                train_score, train_balanced_score, trained_model= mlu.model_fitting(model_name, x_train, y_train, options.kFold)
+
+                train_score, train_balanced_score, trained_model, min_max_scaler = mlu.model_fitting(model_name, x_train, y_train, options.kFold, options.normalize)
+                if options.normalize:
+                    x_test_minmax = min_max_scaler.fit_transform(x_test)
+                    x_test = x_test_minmax
+
                 test_score = trained_model.score(x_test, y_test)
                 test_balanced_score = mlu.balanced_accuracy(trained_model.predict(x_test),y_test)
                 #print(model_name + " Train:"+ str(train_score) + "  Test:" +str(test_score) +" Contrast:" +contrast_name)
@@ -39,7 +44,7 @@ def run_basic_ml(df, options, n, scoresdf, contrast_name):
                      'Contrast_name':contrast_name,'Balanced_accuracy':test_balanced_score}, ignore_index=True)
 
         else:
-            train_score, trained_model= mlu.model_fitting(options.model, x_train, y_train, options.kFold)
+            train_score, train_balanced_score, trained_model, min_max_scaler = mlu.model_fitting(options.model, x_train, y_train, options.kFold, True)
             test_score = trained_model.score(x_test, y_test)
             scoresdf = scoresdf.append(
                 {'Score': train_score, 'Type': 'train', 'Model': options.model, 'Classifier': n,
@@ -68,15 +73,17 @@ def main():
 
     contrast_list = ["Faces_con_0001.mat",'Faces_con_0001_389.mat','nBack_con_0001.mat','nBack_con_0001_407.mat' ]
     i = 0
+    mat_files = os.listdir(options.data)
     #for i in range(0, len(contrast_list),2): #TODO uncomment this for combined
     #for i in range(len(contrast_list)):
-    for mat_file in os.listdir(options.data): #TODO uncomment this for individual
 
-        #print(mat_file)
-        #contrast_name = mat_file.split(".")[0]
-        contrast_name = contrast_list[i].split(".")[0]
+
+    for mat_file in mat_files: #TODO uncomment this for individual
+
+        #contrast_name = contrast_list[i].split(".")[0]
+        contrast_name = mat_file.split(".")[0]
+
         # Checking if the training is already made for the particular contrast
-
         # TODO Uncomment this for checking if contrast is present in the file
         if len(scoresdf[scoresdf['Contrast_name'] == contrast_name]):
             continue

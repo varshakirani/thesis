@@ -7,6 +7,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn import preprocessing
 
 import numpy as np
 
@@ -51,10 +52,14 @@ def balanced_accuracy(predictions, true_values):
     return baccuracy
 
 
-def model_fitting(model_name, X, y, kFold=10):
+def model_fitting(model_name, X, y, kFold=10, normalize=False):
+    min_max_scaler = preprocessing.MinMaxScaler()
     if model_name == "svm_kernel_default":
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
     elif model_name == "svm_kernel_tuned":
+        if normalize:
+            X_minmax = min_max_scaler.fit_transform(X)
+            X = X_minmax
         param_grid = {'C': [0.1, 1, 10, 100, 1000],
                         'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['rbf']}
         grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold)
@@ -79,7 +84,7 @@ def model_fitting(model_name, X, y, kFold=10):
     pred = model.predict(X)
     balanced_accuracy_score = balanced_accuracy(pred,y)
 
-    return scores, balanced_accuracy_score ,model
+    return scores, balanced_accuracy_score, model, min_max_scaler
 
 
 def model_test(test, model):
