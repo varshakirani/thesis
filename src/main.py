@@ -1,11 +1,13 @@
 import sys
 import time #to check total time took for running the script or function
-sys.path.insert(0, '/Users/varshakirani/Documents/TUB/Thesis/imp/thesis/src/Utilities')
+sys.path.insert(0, 'src/Utilities')
 import pandas as pd
 import tools
 import ml_utilities as mlu
 import os
 import logging
+import itertools
+import re
 
 
 # Create and configure the logger
@@ -56,6 +58,16 @@ def run_basic_ml(df, options, n, scoresdf, contrast_name):
     return scoresdf
 
 
+def contrast_permutation(contrast_list):
+    combi_temp = []
+
+    for r in itertools.product(contrast_list, contrast_list):
+        if r[0] != r[1]:
+            combi_temp.append(r)
+    combi_contrast = list(map(tuple, set(map(frozenset, combi_temp))))
+    return combi_contrast
+
+
 def main():
     print("NI Thesis")
     options = tools.parse_options()
@@ -71,17 +83,28 @@ def main():
     else:
         scoresdf = pd.DataFrame(columns=['Score', 'Type', 'Model', 'Classifier', 'Contrast_name', 'Balanced_accuracy'])
 
-    contrast_list = ["Faces_con_0001.mat",'Faces_con_0001_389.mat','nBack_con_0001.mat','nBack_con_0001_407.mat' ]
-    i = 0
     mat_files = os.listdir(options.data)
-    #for i in range(0, len(contrast_list),2): #TODO uncomment this for combined
-    #for i in range(len(contrast_list)):
+    #To get matfiles which does not ends with 389.mat or 487.mat. Selecting only minified mat files like
+    #contrast_list = ['Faces_con_0003.mat', 'Faces_con_0002.mat', 'Faces_con_0001.mat', 'Faces_con_0005.mat',
+    #                 'Faces_con_0004.mat', 'nBack_con_0001.mat', 'nBack_con_0002.mat', 'nBack_con_0003.mat']
 
+    contrast_list = list(filter(None,filter(lambda x: re.search('.*_.....mat',x) , mat_files)))
+    combi_contrast = contrast_permutation(contrast_list)
 
-    for mat_file in mat_files: #TODO uncomment this for individual
+    if options.combine:
+        clist = combi_contrast
+    else :
+        clist = contrast_list
 
-        #contrast_name = contrast_list[i].split(".")[0]
-        contrast_name = mat_file.split(".")[0]
+    for i in range(len(clist)):
+
+    #Getting Contrast name
+        if options.combine:
+            c1_name = clist[i][0].split(".")[0]
+            c2_name = clist[i][1].split(",")[0]
+            contrast_name = c1_name + '&' + c2_name
+        else:
+            contrast_name = clist[i].split(".")[0]
 
         # Checking if the training is already made for the particular contrast
         # TODO Uncomment this for checking if contrast is present in the file
@@ -94,12 +117,9 @@ def main():
 
                 # Read Data and put it into panda data frame. Initially considering only means
                 if options.combine:
-                    #print(contrast_list[i], contrast_list[i+1])
-                    df, contrast_name = tools.combine_contrast(options.data, nClass, contrast_list[i], contrast_list[i+1])
-                    pass
+                    df, contrast_name = tools.combine_contrast(options.data, nClass, clist[i][0],clist[i][1])
                 else:
-                    df, contrast_name = tools.data_extraction(options.data, nClass, mat_file) #TODO uncomment this for individual
-                    #df, contrast_name = tools.data_extraction(options.data, nClass, contrast_list[i]) #TODO uncomment this for combined
+                    df, contrast_name = tools.data_extraction(options.data, nClass, clist[i])
                 df = mlu.missing_values(df)
                 scoresdf = run_basic_ml(df, options, 123, scoresdf,contrast_name)
 
@@ -107,12 +127,10 @@ def main():
             elif nClass == 2:
 
                 if options.combine:
-                    #print(contrast_list[i], contrast_list[i + 1])
-                    df1, df2, df3, contrast_name = tools.combine_contrast(options.data, nClass, contrast_list[i], contrast_list[i+1])
-                    pass
+                    df1, df2, df3, contrast_name = tools.combine_contrast(options.data, nClass, clist[i][0], clist[i][1])
+
                 else:
-                    df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, mat_file) #TODO uncomment this for individual
-                    #df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, contrast_list[i]) #TODO uncomment this for combined
+                    df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, clist[i])
                 # Combining two pairs off all combination
                 df12 = df1.append(df2)
                 df23 = df2.append(df3)
@@ -130,10 +148,6 @@ def main():
 
         scoresdf.to_csv(options.output + "%s.csv" % (o_subtitle), index=False)
 
-
-    #print(scoresdf.shape)
-
-    #scoresdf.to_csv(options.output+"%s.csv"%(o_subtitle), index=False)
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))
