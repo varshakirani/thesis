@@ -9,17 +9,20 @@ import logging
 import itertools
 import re
 
+DATA_TYPE='BRODMANN'
 
 # Create and configure the logger
-# LOG_FORMAT = "%(levelname)s %(asctime)s - %(message)s"
-# logging.basicConfig(filename='logs/running_ml.log', level=logging.DEBUG, format=LOG_FORMAT)
-# logger = logging.getLogger()
+LOG_FORMAT = "%(levelname)s %(asctime)s - %(message)s"
+logging.basicConfig(filename='logs/running_ml.log', level=logging.DEBUG, format=LOG_FORMAT)
+logger = logging.getLogger()
 
-# logger.info('Running all the ml models on all the contrast')
+logger.info('Running all the ml models on all the contrast')
+
+
 def run_basic_ml(df, options, n, scoresdf, contrast_name):
     print(contrast_name)
-    #models = ["svm_kernel_default", "svm_kernel_tuned", "naive_bayes", "decision_tree", "rfc", 'logistic_regression']
-    models = ["svm_kernel_tuned"]
+    models = ["svm_kernel_default", "svm_kernel_tuned", "naive_bayes", "decision_tree", "rfc", 'logistic_regression']
+    #models = ["svm_kernel_tuned"]
 
     for i in range(options.number_iterations):
         train, test = mlu.train_test_split(df)
@@ -84,11 +87,14 @@ def main():
         scoresdf = pd.DataFrame(columns=['Score', 'Type', 'Model', 'Classifier', 'Contrast_name', 'Balanced_accuracy'])
 
     mat_files = os.listdir(options.data)
+    print(mat_files)
     #To get matfiles which does not ends with 389.mat or 487.mat. Selecting only minified mat files like
     #contrast_list = ['Faces_con_0003.mat', 'Faces_con_0002.mat', 'Faces_con_0001.mat', 'Faces_con_0005.mat',
     #                 'Faces_con_0004.mat', 'nBack_con_0001.mat', 'nBack_con_0002.mat', 'nBack_con_0003.mat']
 
     contrast_list = list(filter(None,filter(lambda x: re.search('.*_.....mat',x) , mat_files)))
+    #TODO remove this for old Data
+    contrast_list = mat_files
     combi_contrast = contrast_permutation(contrast_list)
 
     if options.combine:
@@ -151,6 +157,8 @@ def main():
 
     print("It took %s seconds to run %s iterations for %s model" % (time.time() - start, options.number_iterations,
                                                                     options.model))
+
+    logger.info("It took %s seconds to run %s iterations for all models for not normalized" % (time.time() - start, options.number_iterations))
 
 
 if __name__ == '__main__':

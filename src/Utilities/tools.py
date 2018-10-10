@@ -56,43 +56,32 @@ def parse_options():
     options = parser.parse_args()
     return options
 
-def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
-    """
-    This function currently reads single contrast
-    :param data_folder: Path to the folder that contains Data
+
+def data_extraction_brodmann(data_folder, nClass, mat_file = "nBack_con_0001_Brodmann20.mat", cols=[] ):
+    '''
+    This function extracts information ROI, label, subject_cont required for ML training from nBack 20 Brodmann ROI.
+    :param data_folder: Path to the data folder which contains Bordmann ROIs (mainly nBack)
     :param nClass: 2: for divinding the labels for biclass, 3: all 3 class in same dataframe
     :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
             df1, df2, df3: Separated dataframes for each class when nClass is 2
-    """
+    '''
     contrast_name = mat_file.split(".")[0]
-    data = sio.loadmat(data_folder+"/" + mat_file)
-    data_list = []
-    for i in range(len(data["means"])):
-        d = data["means"][i], data["label"][0][i]
-        data_list.append(d)
-    columns = ["means", "label"]
+    data = sio.loadmat(data_folder + "/" + mat_file)
 
-    """
-
-    data_list = []
-    for matFile in os.listdir(data_folder):
-        if matFile.startswith("Faces") and not matFile.endswith("389.mat"):
-            data = sio.loadmat(data_folder +"/" + matFile)
-            for i in range(len(data["means"])):
-                d = data["means"][i], data["label"][0][i]
-                data_list.append(d)
-    """
-
-    df = pd.DataFrame(data_list, columns=columns)
-    RoiNames = (data["RoiName"][:, 0])
+    # Extract Roi names for the DataFrame column names
+    RoiNames = (data["roiName"][0])
     colRoi = []
-    for roi in RoiNames:
-        colRoi.append(roi[0])
-    df[colRoi] = pd.DataFrame(df.means.values.tolist(), index=df.index)
-    df.drop(['means'], axis=1, inplace=True)
-    df["subject_cont"] = pd.DataFrame(np.transpose(data["subject_cont"]))
+    for i in range(len(RoiNames)):
+        colRoi.append(data["roiName"][0][i][0])
 
-    print(df.shape)
+    # prepare ROI data to add it to the dataFrame
+    data_list = []
+    [data_list.append(data["datas"][i]) for i in range(len(data["datas"]))]
+
+    # Adding all values to the DataFrame: ROI, label and subject id
+    df = pd.DataFrame(data_list, columns=colRoi, dtype=np.float64)
+    df['label'] = pd.DataFrame(np.transpose(data['label']))
+    df['subject_cont'] = pd.DataFrame(np.transpose(data['subjects']))
     if nClass == 3: # No need for separated data
         return df,contrast_name
 
@@ -101,6 +90,74 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat" ):
         df2 = df[df.label == 2]
         df3 = df[df.label == 3]
         return df1, df2, df3, contrast_name
+
+def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='brodmann' ):
+    """
+    This function currently reads single contrast
+    :param data_folder: Path to the folder that contains Data
+    :param nClass: 2: for divinding the labels for biclass, 3: all 3 class in same dataframe
+    :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
+            df1, df2, df3: Separated dataframes for each class when nClass is 2
+    """
+    # ----------------- Brodmann---------------------
+    if type=='brodmann':
+        print('brodmann')
+        contrast_name = mat_file.split(".")[0]
+        data = sio.loadmat(data_folder + "/" + mat_file)
+
+        # Extract Roi names for the DataFrame column names
+        RoiNames = (data["roiName"][0])
+        colRoi = []
+        for i in range(len(RoiNames)):
+            colRoi.append(data["roiName"][0][i][0])
+
+        # prepare ROI data to add it to the dataFrame
+        data_list = []
+        [data_list.append(data["datas"][i]) for i in range(len(data["datas"]))]
+
+        # Adding all values to the DataFrame: ROI, label and subject id
+        df = pd.DataFrame(data_list, columns=colRoi, dtype=np.float64)
+        df['label'] = pd.DataFrame(np.transpose(data['label']))
+        df['subject_cont'] = pd.DataFrame(np.transpose(data['subjects']))
+        if nClass == 3:  # No need for separated data
+            return df, contrast_name
+
+        elif nClass == 2:
+            df1 = df[df.label == 1]
+            df2 = df[df.label == 2]
+            df3 = df[df.label == 3]
+            return df1, df2, df3, contrast_name
+
+
+      # ----------------- AAL all ROI---------------------
+    else:
+
+        contrast_name = mat_file.split(".")[0]
+        data = sio.loadmat(data_folder+"/" + mat_file)
+        data_list = []
+        for i in range(len(data["means"])):
+            d = data["means"][i], data["label"][0][i]
+            data_list.append(d)
+        columns = ["means", "label"]
+
+        df = pd.DataFrame(data_list, columns=columns)
+        RoiNames = (data["RoiName"][:, 0])
+        colRoi = []
+        for roi in RoiNames:
+            colRoi.append(roi[0])
+        df[colRoi] = pd.DataFrame(df.means.values.tolist(), index=df.index)
+        df.drop(['means'], axis=1, inplace=True)
+        df["subject_cont"] = pd.DataFrame(np.transpose(data["subject_cont"]))
+
+        print(df.shape)
+        if nClass == 3: # No need for separated data
+            return df,contrast_name
+
+        elif nClass == 2:
+            df1 = df[df.label == 1]
+            df2 = df[df.label == 2]
+            df3 = df[df.label == 3]
+            return df1, df2, df3, contrast_name
 
 def combine_contrast(data_folder,nClass, contrast1='Faces_con_0001.mat', contrast2='Faces_con_0001_389.mat'):
     """
