@@ -1,5 +1,6 @@
 import math
-import pandas as pd
+import numpy as np
+
 from sklearn.utils import shuffle
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
@@ -8,8 +9,15 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn import preprocessing
-
-import numpy as np
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import permutation_test_score
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import Lasso
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.metrics import mean_squared_error
 
 
 def train_test_split(df):
@@ -53,13 +61,14 @@ def balanced_accuracy(predictions, true_values):
 
 
 def model_fitting(model_name, X, y, kFold=10, normalize=False):
+    classification = True
     min_max_scaler = preprocessing.MinMaxScaler()
+    if normalize:
+        X_minmax = min_max_scaler.fit_transform(X,y)
+        X = X_minmax
     if model_name == "svm_kernel_default":
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
     elif model_name == "svm_kernel_tuned":
-        if normalize:
-            X_minmax = min_max_scaler.fit_transform(X)
-            X = X_minmax
         param_grid = {'C': [0.1, 1, 10, 100, 1000],
                         'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['rbf']}
         grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold)
@@ -76,13 +85,58 @@ def model_fitting(model_name, X, y, kFold=10, normalize=False):
         model = RandomForestClassifier(n_estimators=200)
     elif model_name == "logistic_regression":
         model = LogisticRegression()
+    elif model_name == "linear_reg":
+        model = LinearRegression()
+    elif model_name == "polynomial_reg":
+        model = Pipeline([('poly', PolynomialFeatures(degree=4)),
+                          ('linear', LinearRegression())])
+    elif model_name == 'lasso':
+        model = Lasso(alpha=0.1)
+    elif model_name == 'svr_kernel_default':
+        model = svm.SVR(kernel='linear',  C=4, gamma=2 ** -5)
+        model.fit(X, y)
+        scores = model.score(X, y)
+        pred = model.predict(X)
+        pred = np.round(pred)
+        balanced_accuracy_score =  mean_squared_error(y, pred, multioutput='raw_values')
+        classification = False
+    elif model_name == 'svr_kernel_tuned':
+        param_grid = {'C': [0.1, 1, 10, 100, 1000],
+                      'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['linear']}
+        grid = GridSearchCV(svm.SVR(), param_grid, refit=True, cv=kFold)
+        grid.fit(X, y)
+        best_param = grid.best_params_
+        model = svm.SVR(kernel=best_param['kernel'], C=best_param['C'], gamma=best_param['gamma'])
+        model.fit(X, y)
+        scores = model.score(X, y)
+        pred = model.predict(X)
+        pred = np.round(pred)
+        balanced_accuracy_score =  mean_squared_error(y, pred, multioutput='raw_values')
+        classification = False
+    elif model_name == 'gpr_default':
+        kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+        model = GaussianProcessRegressor( n_restarts_optimizer=9)
+        model.fit(X, y)
+        scores = model.score(X, y)
+        pred, sigma = model.predict(X, return_std=True)
+        pred = np.round(pred)
+        balanced_accuracy_score = mean_squared_error(y, pred, multioutput='raw_values')
+        classification = False
     else:
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
+        model.fit(X, y)
+        scores = model.score(X, y)
+        pred = model.predict(X)
+        balanced_accuracy_score = balanced_accuracy(pred, y)
 
-    model.fit(X, y)
-    scores = model.score(X, y)
-    pred = model.predict(X)
-    balanced_accuracy_score = balanced_accuracy(pred,y)
+    if classification:
+        model.fit(X, y)
+        scores = model.score(X, y)
+        pred = model.predict(X)
+        balanced_accuracy_score = balanced_accuracy(pred,y)
+
+    print("Predicted:%s, Actual:%s"%(pred[0], y[0]))
+
 
     return scores, balanced_accuracy_score, model, min_max_scaler
 
@@ -138,3 +192,11 @@ def missing_values(df, method=1):
 
         df.fillna(0, inplace=True)
     return df
+
+
+def permutation_test(X, y, estimator, n_permutations, kFold):
+
+    score, permutation_scores, p_value = permutation_test_score(estimator=estimator, X=X, y=y,
+                                                                scoring='balanced_accuracy', cv=StratifiedKFold(kFold),
+                                                                n_permutations=n_permutations, n_jobs=1)
+    return score, permutation_scores, p_value
