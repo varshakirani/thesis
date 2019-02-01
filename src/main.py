@@ -35,7 +35,7 @@ def run_basic_ml(df, options, n, scoresdf, contrast_name):
 
                 train_score, train_balanced_score, trained_model, min_max_scaler = mlu.model_fitting(model_name, x_train, y_train, options.kFold, options.normalize)
                 if options.normalize:
-                    x_test_minmax = min_max_scaler.fit_transform(x_test)
+                    x_test_minmax = min_max_scaler.transform(x_test)
                     x_test = x_test_minmax
 
                 test_score = trained_model.score(x_test, y_test)
@@ -123,9 +123,9 @@ def main():
 
                 # Read Data and put it into panda data frame. Initially considering only means
                 if options.combine:
-                    df, contrast_name = tools.combine_contrast(options.data, nClass, clist[i][0],clist[i][1])
+                    df, contrast_name = tools.combine_contrast(options.data, nClass, clist[i][0],clist[i][1], options.data_type)
                 else:
-                    df, contrast_name = tools.data_extraction(options.data, nClass, clist[i])
+                    df, contrast_name = tools.data_extraction(options.data, nClass, clist[i], options.data_type)
                 df = mlu.missing_values(df)
                 scoresdf = run_basic_ml(df, options, 123, scoresdf,contrast_name)
 
@@ -133,10 +133,10 @@ def main():
             elif nClass == 2:
 
                 if options.combine:
-                    df1, df2, df3, contrast_name = tools.combine_contrast(options.data, nClass, clist[i][0], clist[i][1])
+                    df1, df2, df3, contrast_name = tools.combine_contrast(options.data, nClass, clist[i][0], clist[i][1], options.data_type)
 
                 else:
-                    df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, clist[i])
+                    df1, df2, df3, contrast_name = tools.data_extraction(options.data, nClass, clist[i], options.data_type)
                 # Combining two pairs off all combination
                 df12 = df1.append(df2)
                 df23 = df2.append(df3)
