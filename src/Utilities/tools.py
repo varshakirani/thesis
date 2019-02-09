@@ -53,45 +53,23 @@ def parse_options():
                         default='out/output_scores_testing/Faces_con_0001&Faces_con_0001_389.csv', type=str,
                         help='Path to input csv file which contains information about the scores ')
 
+    parser.add_argument('-dt', '--data_type', required=False,
+                        default='face__aal' , type=str,
+                        help='brodmann for Brodmann data type and face_aal for AAL data_type')
+
+    parser.add_argument('-ad', '--additional_data', required=False,
+                        default='../data_info', type=str,
+                        help='Path to folder which contains additional information of the data')
+
+    parser.add_argument('-ag','--age_gender', required=False,
+                        default='age', type=str,
+                        help='Pass age to run relevance of age info to the data and gender to check for gender')
+
     options = parser.parse_args()
     return options
 
 
-def data_extraction_brodmann(data_folder, nClass, mat_file = "nBack_con_0001_Brodmann20.mat", cols=[] ):
-    '''
-    This function extracts information ROI, label, subject_cont required for ML training from nBack 20 Brodmann ROI.
-    :param data_folder: Path to the data folder which contains Bordmann ROIs (mainly nBack)
-    :param nClass: 2: for divinding the labels for biclass, 3: all 3 class in same dataframe
-    :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
-            df1, df2, df3: Separated dataframes for each class when nClass is 2
-    '''
-    contrast_name = mat_file.split(".")[0]
-    data = sio.loadmat(data_folder + "/" + mat_file)
-
-    # Extract Roi names for the DataFrame column names
-    RoiNames = (data["roiName"][0])
-    colRoi = []
-    for i in range(len(RoiNames)):
-        colRoi.append(data["roiName"][0][i][0])
-
-    # prepare ROI data to add it to the dataFrame
-    data_list = []
-    [data_list.append(data["datas"][i]) for i in range(len(data["datas"]))]
-
-    # Adding all values to the DataFrame: ROI, label and subject id
-    df = pd.DataFrame(data_list, columns=colRoi, dtype=np.float64)
-    df['label'] = pd.DataFrame(np.transpose(data['label']))
-    df['subject_cont'] = pd.DataFrame(np.transpose(data['subjects']))
-    if nClass == 3: # No need for separated data
-        return df,contrast_name
-
-    elif nClass == 2:
-        df1 = df[df.label == 1]
-        df2 = df[df.label == 2]
-        df3 = df[df.label == 3]
-        return df1, df2, df3, contrast_name
-
-def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='brodmann' ):
+def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='face_aal' ):
     """
     This function currently reads single contrast
     :param data_folder: Path to the folder that contains Data
@@ -99,6 +77,8 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='
     :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
+
+    print(type)
     # ----------------- Brodmann---------------------
     if type=='brodmann':
         print('brodmann')
@@ -131,7 +111,7 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='
 
       # ----------------- AAL all ROI---------------------
     else:
-
+        print('face_aal')
         contrast_name = mat_file.split(".")[0]
         data = sio.loadmat(data_folder+"/" + mat_file)
         data_list = []
@@ -159,7 +139,7 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='
             df3 = df[df.label == 3]
             return df1, df2, df3, contrast_name
 
-def combine_contrast(data_folder,nClass, contrast1='Faces_con_0001.mat', contrast2='Faces_con_0001_389.mat'):
+def combine_contrast(data_folder,nClass, contrast1='Faces_con_0001.mat', contrast2='Faces_con_0001_389.mat',data_type='face_aal'):
     """
     Combines the two contrast with respect to subject_cont. It performs inner join. Returns panda dataframes according to nClass
     :param data_folder: Input folder which contains the contrast mat file
@@ -169,8 +149,8 @@ def combine_contrast(data_folder,nClass, contrast1='Faces_con_0001.mat', contras
     :return: df: When nClass=3 Single panda dataframe containing means of various Region of interest (ROI) of Brain of all the three classes combined
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
-    df1,contrast1 = data_extraction(data_folder,3,contrast1)
-    df2,contrast2 = data_extraction(data_folder,3,contrast2)
+    df1,contrast1 = data_extraction(data_folder,3,contrast1, data_type)
+    df2,contrast2 = data_extraction(data_folder,3,contrast2, data_type)
 
     df = pd.merge(df1,df2,how='inner',on='subject_cont')
     df['label'] = df['label_x'] & df['label_y']
