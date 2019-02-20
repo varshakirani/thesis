@@ -18,6 +18,7 @@ from sklearn.linear_model import Lasso
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import balanced_accuracy_score
 
 
 def train_test_split(df):
@@ -45,17 +46,21 @@ def balanced_accuracy(predictions, true_values):
     true_label1 = float(sum(true_values == 1))
     true_label2 = float(sum(true_values == 2))
     true_label3 = float(sum(true_values == 3))
+    denominator = 3
     if not true_label1 :
         true_label1 = 1.0
+        denominator = 2
     if not true_label2:
         true_label2 = 1.0
+        denominator = 2
     if not true_label3:
         true_label3 = 1.0
+        denominator = 2
 
 
     baccuracy = ((sum(label1) / true_label1) +
                  (sum(label2) / true_label2) +
-                 (sum(label3) / true_label3)) / 3
+                 (sum(label3) / true_label3)) / denominator
 
     return baccuracy
 
@@ -71,7 +76,7 @@ def model_fitting(model_name, X, y, kFold=10, normalize=False):
     elif model_name == "svm_kernel_tuned":
         param_grid = {'C': [0.1, 1, 10, 100, 1000],
                         'gamma': [1, 0.1, 0.01, 0.001, 0.0001, 0.00001, 2 ** -5, 2 ** -10, 2 ** 5], 'kernel': ['rbf']}
-        grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold)
+        grid = GridSearchCV(svm.SVC(), param_grid, refit=True, cv=kFold, iid=False)
         grid.fit(X, y)
         best_param = grid.best_params_
         model = svm.SVC(kernel=best_param['kernel'], C=best_param['C'], gamma=best_param['gamma'])
@@ -84,7 +89,7 @@ def model_fitting(model_name, X, y, kFold=10, normalize=False):
     elif model_name == "rfc":
         model = RandomForestClassifier(n_estimators=200)
     elif model_name == "logistic_regression":
-        model = LogisticRegression()
+        model = LogisticRegression(solver="liblinear", multi_class='auto')
     elif model_name == "linear_reg":
         model = LinearRegression()
     elif model_name == "polynomial_reg":
@@ -98,7 +103,7 @@ def model_fitting(model_name, X, y, kFold=10, normalize=False):
         scores = model.score(X, y)
         pred = model.predict(X)
         pred = np.round(pred)
-        balanced_accuracy_score =  mean_squared_error(y, pred, multioutput='raw_values')
+        balanced_accuracy =  mean_squared_error(y, pred, multioutput='raw_values')
         classification = False
     elif model_name == 'svr_kernel_tuned':
         param_grid = {'C': [0.1, 1, 10, 100, 1000],
@@ -111,7 +116,7 @@ def model_fitting(model_name, X, y, kFold=10, normalize=False):
         scores = model.score(X, y)
         pred = model.predict(X)
         pred = np.round(pred)
-        balanced_accuracy_score =  mean_squared_error(y, pred, multioutput='raw_values')
+        balanced_accuracy =  mean_squared_error(y, pred, multioutput='raw_values')
         classification = False
     elif model_name == 'gpr_default':
         kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
@@ -120,25 +125,26 @@ def model_fitting(model_name, X, y, kFold=10, normalize=False):
         scores = model.score(X, y)
         pred, sigma = model.predict(X, return_std=True)
         pred = np.round(pred)
-        balanced_accuracy_score = mean_squared_error(y, pred, multioutput='raw_values')
+        balanced_accuracy = mean_squared_error(y, pred, multioutput='raw_values')
         classification = False
     else:
         model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
         model.fit(X, y)
         scores = model.score(X, y)
         pred = model.predict(X)
-        balanced_accuracy_score = balanced_accuracy(pred, y)
-
+        #balanced_accuracy = balanced_accuracy(pred, y)
+        balanced_accuracy = balanced_accuracy_score(y,pred)
     if classification:
         model.fit(X, y)
         scores = model.score(X, y)
         pred = model.predict(X)
-        balanced_accuracy_score = balanced_accuracy(pred,y)
+        #balanced_accuracy = balanced_accuracy(pred,y)
+        balanced_accuracy = balanced_accuracy_score(y, pred)
 
-    print("Predicted:%s, Actual:%s"%(pred[0], y[0]))
+    #print("Predicted:%s, Actual:%s"%(pred[0], y[0]))
 
 
-    return scores, balanced_accuracy_score, model, min_max_scaler
+    return scores, balanced_accuracy, model, min_max_scaler
 
 
 def model_test(test, model):

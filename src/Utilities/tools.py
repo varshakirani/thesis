@@ -65,6 +65,14 @@ def parse_options():
                         default='age', type=str,
                         help='Pass age to run relevance of age info to the data and gender to check for gender')
 
+    parser.add_argument('-mf','--mat_file', required=False,
+                        default='nBack_con_0003.mat', type=str,
+                        help='Matfile name to run experiments on a particular contrast. '
+                        )
+    parser.add_argument('-cl','--class_label', required=False,
+                        default='12', type=str,
+                        help='class labels: 1 for BD, 2: for Schizo and 3 for control. 12, 23 and 31 are for ' \
+                             'combinations of the same ')
     options = parser.parse_args()
     return options
 
@@ -78,10 +86,8 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='
             df1, df2, df3: Separated dataframes for each class when nClass is 2
     """
 
-    print(type)
     # ----------------- Brodmann---------------------
     if type=='brodmann':
-        print('brodmann')
         contrast_name = mat_file.split(".")[0]
         data = sio.loadmat(data_folder + "/" + mat_file)
 
@@ -111,7 +117,6 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='
 
       # ----------------- AAL all ROI---------------------
     else:
-        print('face_aal')
         contrast_name = mat_file.split(".")[0]
         data = sio.loadmat(data_folder+"/" + mat_file)
         data_list = []
@@ -129,7 +134,7 @@ def data_extraction(data_folder, nClass, mat_file = "Faces_con_0001.mat", type='
         df.drop(['means'], axis=1, inplace=True)
         df["subject_cont"] = pd.DataFrame(np.transpose(data["subject_cont"]))
 
-        print(df.shape)
+        #print(df.shape)
         if nClass == 3: # No need for separated data
             return df,contrast_name
 
