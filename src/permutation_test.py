@@ -25,9 +25,9 @@ def run_perm_test(df, contrast_name, classifier_no, out, n_iterations):
 
     for i in range(n_iterations):
         train, test = mlu.train_test_split(df)
-        x_train, y_train = mlu.get_features_labels(train)
-        x_test, y_test = mlu.get_features_labels(test)
-
+        #x_train, y_train = mlu.get_features_labels(train)
+        #x_test, y_test = mlu.get_features_labels(test)
+        x_train, y_train, x_test, y_test = mlu.preprocess_remove_gender(df)
         for model_name in models:
             if model_name == "svm_kernel_default":
                 model = svm.SVC(kernel='rbf', C=4, gamma=2 ** -5)
@@ -59,10 +59,12 @@ def run_perm_test(df, contrast_name, classifier_no, out, n_iterations):
 
             ## Only at the last iteration, permutation test is run 10000 times and using the performance scores and
             # mean of non-permutated accuracy of n_iterations, p-value can be calculated
+
             if i == n_iterations-1:
                 scores, permutation_scores, p_value = mlu.permutation_test(X, y, model, 10000, 10)
                 performance_file = contrast_name[0]+contrast_name[-1]+"_"+classifier_no+"_"+model_name
                 np.savetxt(out+"%s.csv" % performance_file, permutation_scores, fmt="%10.18f")
+
 
 
 if __name__ == '__main__':
@@ -97,6 +99,10 @@ if __name__ == '__main__':
     #run_perm_test(df12, contrast_name, 12, options.output, options.number_iterations)
     #run_perm_test(df23, contrast_name, 23, options.output, options.number_iterations)
     #run_perm_test(df31, contrast_name, 31, options.output, options.number_iterations)
+
+    df12 = mlu.merge_additional_data(df12, options.additional_data)
+    df23 = mlu.merge_additional_data(df23, options.additional_data)
+    df31 = mlu.merge_additional_data(df31, options.additional_data)
 
     if options.class_label == '12':
         df = df12
